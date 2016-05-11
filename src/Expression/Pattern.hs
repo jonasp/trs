@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Expression.Pattern (Pattern, PLeaf(P,S)) where
+module Expression.Pattern (Pattern, PLeaf(P,PS,PNS,S)) where
 
 import Expression (Expression, PrettyPrint, pretty)
 
@@ -12,6 +12,8 @@ import Test.QuickCheck.Gen (oneof)
 
 data PLeaf a = S a
              | P a
+             | PS a
+             | PNS a
              deriving (Show, Eq, Generic)
 
 instance (Hashable a) => Hashable (PLeaf a)
@@ -24,3 +26,5 @@ type Pattern a = Expression (PLeaf a)
 instance (PrettyPrint a) => PrettyPrint (PLeaf a) where
   pretty (S e) = pretty e
   pretty (P s) = (pretty s) ++ "_"
+  pretty (PS s) = (pretty s) ++ "__"
+  pretty (PNS s) = (pretty s) ++ "___"

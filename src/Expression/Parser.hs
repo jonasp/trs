@@ -1,7 +1,7 @@
 module Expression.Parser where
 
 import Expression (Expression(E,L), SLeaf, makeAtom, makeNumber,  SExpression)
-import Expression.Pattern (Pattern, PLeaf(P,S))
+import Expression.Pattern (Pattern, PLeaf(P,PS,PNS,S))
 
 import Data.Text
 
@@ -38,17 +38,43 @@ sleaf = (makeAtom <$> atom) <|> (makeNumber <$> number)
 sexpr :: Parser SExpression
 sexpr = expr sleaf
 
-namedPattern :: Parser String
-namedPattern = identifier <* char '_' <* notFollowedBy (char '_')
+patternSymbol :: Parser Char
+patternSymbol = char '_' <* notFollowedBy (char '_')
 
-unnamedPattern :: Parser String
-unnamedPattern = (const "" <$> char '_') <* notFollowedBy (char '_')
+patternSeqSymbol :: Parser Char
+patternSeqSymbol = char '_' <* char '_' <* notFollowedBy (char '_')
 
-pattern :: Parser String
-pattern = tok (namedPattern <|> unnamedPattern)
+patternNullSeqSymbol :: Parser Char
+patternNullSeqSymbol = char '_' <* char '_' <* char '_' <* notFollowedBy (char '_')
+
+namedPattern :: Parser (PLeaf SLeaf)
+namedPattern = P . makeAtom <$> tok (identifier <* patternSymbol)
+
+namedPatternSeq :: Parser (PLeaf SLeaf)
+namedPatternSeq = PS . makeAtom <$> tok (identifier <* patternSeqSymbol)
+
+namedPatternNullSeq :: Parser (PLeaf SLeaf)
+namedPatternNullSeq = PNS . makeAtom <$> tok (identifier <* patternNullSeqSymbol)
+
+unnamedPattern :: Parser (PLeaf SLeaf)
+unnamedPattern = P . makeAtom <$> tok (const "" <$> patternSymbol)
+
+unnamedPatternSeq :: Parser (PLeaf SLeaf)
+unnamedPatternSeq = PS . makeAtom <$> tok (const "" <$> patternSeqSymbol)
+
+unnamedPatternNullSeq :: Parser (PLeaf SLeaf)
+unnamedPatternNullSeq = PNS . makeAtom <$> tok (const "" <$> patternNullSeqSymbol)
+
+pattern :: Parser (PLeaf SLeaf)
+pattern =  try namedPattern
+       <|> (try namedPatternSeq)
+       <|> (try namedPatternNullSeq)
+       <|> (try unnamedPattern)
+       <|> (try unnamedPatternSeq)
+       <|> unnamedPatternNullSeq
 
 pleaf :: Parser (PLeaf SLeaf)
-pleaf = try (P . makeAtom <$> pattern) <|> (S <$> sleaf)
+pleaf = try pattern <|> (S <$> sleaf)
 
 pexpr :: Parser (Pattern SLeaf)
 pexpr = expr pleaf

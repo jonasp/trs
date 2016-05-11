@@ -9,7 +9,7 @@ module Expression ( Expression(E,L)
 import GHC.Generics (Generic)
 import Data.Hashable (Hashable)
 
-import Data.Traversable (Traversable, fmapDefault, foldMapDefault)
+import Data.Traversable (fmapDefault, foldMapDefault)
 
 import Data.Char
 
@@ -44,7 +44,7 @@ instance Applicative Expression where
   L fs <*> e = L $ map (<*> e) fs
 
 instance Monad Expression where
-  return x = E x
+  return = E
   E e >>= f  = f e
   L es >>= f = L $ map (>>= f) es
 
@@ -62,14 +62,14 @@ type SExpression = Expression SLeaf
 isIdentifier :: String -> Bool
 isIdentifier [] = False
 isIdentifier (x:[]) = isAlpha x
-isIdentifier (x:xs) = isAlpha x && and (map isAlphaNum xs)
+isIdentifier (x:xs) = isAlpha x && all isAlphaNum xs
 
 makeAtom :: String -> SLeaf
 makeAtom a | isIdentifier a = A a
            | otherwise = error "invalid identifier"
 
 makeNumber :: Integer -> SLeaf
-makeNumber n = N n
+makeNumber = N
 
 class PrettyPrint a where
   pretty :: a -> String
